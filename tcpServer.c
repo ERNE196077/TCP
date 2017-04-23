@@ -23,7 +23,7 @@ int read_line();
 
 int main (int argc, char *argv[]) {
   
-  int sd, newSd, cliLen;
+  int sd, rc, newSd, cliLen;
 
   struct sockaddr_in cliAddr, servAddr;
   char line[MAX_MSG];
@@ -64,13 +64,25 @@ int main (int argc, char *argv[]) {
     
     /* receive segments */
     while(read_line(newSd,line)!=ERROR) {
-      
+      printf("********************************************\n");
       printf("%s: received from %s:TCP%d : %s\n", argv[0], 
 	     inet_ntoa(cliAddr.sin_addr),
 	     ntohs(cliAddr.sin_port), line);
       /* init line */
+      
+      printf("sending data back to client : %s\n",line); 
+      rc = send(newSd, line, strlen(line) + 1, 0);
       memset(line,0x0,MAX_MSG);
       
+      if(rc<0) {
+        perror("cannot send data back to client \n");
+        close(sd);
+        exit(1);
+      
+      }
+      printf("********************************************\n");
+
+
     } /* while(read_line) */
     
   } /* while (1) */
@@ -105,12 +117,12 @@ int read_line(int newSd, char *line_to_return) {
       memset(rcv_msg,0x0,MAX_MSG); /* init buffer */
       n = recv(newSd, rcv_msg, MAX_MSG, 0); /* wait for data */
       if (n<0) {
-	perror(" cannot receive data ");
-	return ERROR;
-      } else if (n==0) {
-	printf(" connection closed by client\n");
-	close(newSd);
-	return ERROR;
+      	perror(" cannot receive data ");
+      	return ERROR;
+            } else if (n==0) {
+      	printf(" connection closed by client\n");
+      	close(newSd);
+      	return ERROR;
       }
     }
   
